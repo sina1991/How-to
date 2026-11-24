@@ -1,12 +1,14 @@
-# Linux server-to-server
+# Linux و SSH Tunnel
 
-Existing production tunnels must remain running. Do not reinstall, restart sshd, replace keys or change systemd units to fix a new destination's publickey error.
-Read-only inspection:
+وضعیت: برنامه‌ریزی؛ اجرای تغییرات سرور ایران به تعویق افتاده است. Tunnelهای فعال فعلی نباید تغییر کنند.
+
+برای استفاده تعاملی از همان کلید مشترک روی Linux مورد اعتماد، نسخه خصوصی از Backup امن بازیابی می‌شود، با مجوز 600 در ~/.ssh قرار می‌گیرد و با ssh-add به Agent اضافه می‌شود. Public Key مشترک در مقصد نصب شده است. سپس ssh root@VPS_IP قابل استفاده است (اگر Agent در همان نشست در دسترس باشد). برای انتخاب صریح کلید: ssh -i ~/.ssh/30na_windows -o IdentitiesOnly=yes root@VPS_IP.
+
+برای Tunnel دائمی systemd، Agent نشست تعاملی الزاماً در دسترس سرویس نیست و کلید دارای Passphrase بدون سازوکار بازکردن امن در Boot کار نمی‌کند. قبل از تغییر، کلید و تنظیمات سرویس فعلی بررسی و Backup می‌شود. استفاده از کلید مشترک روی یک VPS ریسک دسترسی به همه VPSها در صورت نفوذ را ایجاد می‌کند؛ کلید محدود و مستقل برای Tunnel امن‌تر است، اما تغییر معماری نیازمند تصمیم مالک است. هیچ کلید قبلی حذف نمی‌شود و هیچ سرویس فعلی Restart نمی‌شود.
+
+بررسی غیرمخرب برای مرحله آینده:
 ```bash
 clear
-systemctl list-units 'ssh-tunnel-*.service' --all
-systemctl cat ssh-tunnel-1.service
-ssh -G root@server.example.com | grep -E '^(identityfile|user|hostname|port) '
 ls -la ~/.ssh
+systemctl list-units 'ssh-tunnel-*.service' --all
 ```
-A successful tunnel to one destination does not grant access to another. Generate a separate key for new unattended tunnels only after inspecting current identities. For unattended services a dedicated unencrypted key may be needed; restrict the destination authorized_keys entry to the required forwarding destination, source address where stable, and no interactive privileges where feasible. Do not change working tunnel keys. Validate new host fingerprints independently and test a new connection without disrupting existing services. Back up configuration and keys securely outside the public repository before any migration. Actual production changes are not yet tested.
