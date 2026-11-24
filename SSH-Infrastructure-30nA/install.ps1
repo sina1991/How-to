@@ -7,7 +7,10 @@ if (!(Test-Path -LiteralPath $seven)) {
     $seven = $cmd.Source
 }
 Get-Command ssh-keygen, ssh-add | Out-Null
+Write-Host '=== 30nA SSH RESTORE v2 ===' -ForegroundColor Cyan
 $default = Join-Path $env:USERPROFILE 'Downloads\30na-SSH-Backup.zip'
+if (Test-Path (Join-Path $env:USERPROFILE '30na-SSH-Backup.zip')) { $default = Join-Path $env:USERPROFILE '30na-SSH-Backup.zip' }
+if (Test-Path '.\30na-SSH-Backup.zip') { $default = '.\30na-SSH-Backup.zip' }
 if (!$ZipPath) { $ZipPath = Read-Host "ZIP path [$default]"; if (!$ZipPath) { $ZipPath = $default } }
 $ZipPath = (Resolve-Path -LiteralPath $ZipPath).Path
 if (!(Test-Path -LiteralPath $ZipPath -PathType Leaf)) { throw 'ZIP not found' }
@@ -20,9 +23,10 @@ $sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
 try {
     & icacls $tmp /inheritance:r /grant:r "*${sid}:(OI)(CI)F" | Out-Null
     if ($LASTEXITCODE -ne 0) { throw 'Unable to secure temporary directory' }
-    Write-Host 'Enter ZIP password at the 7-Zip prompt.'
-    & $seven e -p -y "-o$tmp" -- $ZipPath 30na_windows 30na_windows.pub
-    if ($LASTEXITCODE -ne 0) { throw 'Extraction failed' }
+    Write-Host '[1/3] Enter ZIP password (not SSH passphrase).' -ForegroundColor Yellow
+    & $seven e -y "-o$tmp" -- $ZipPath 30na_windows 30na_windows.pub
+    if ($LASTEXITCODE -ne 0) { throw 'Extraction failed. Check ZIP password or archive integrity. No keys installed.' }
+    Write-Host '[2/3] Validating key pair' -ForegroundColor Cyan
     $key = Join-Path $tmp '30na_windows'
     $dest = Join-Path $dir '30na_windows'
     foreach ($p in @($key, "$key.pub")) {
@@ -54,7 +58,7 @@ try {
         if ($LASTEXITCODE -ne 0) { throw 'Key restored but ssh-add failed' }
         ssh-add -l
     }
-    Write-Host 'Connect: ssh root@VPS_IP'
+    Write-Host '[3/3] Key restored. Connect: ssh root@VPS_IP' -ForegroundColor Green
 } finally {
     Remove-Item -LiteralPath $tmp -Recurse -Force
 }
