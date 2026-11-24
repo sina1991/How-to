@@ -7,3 +7,7 @@ authorized_keys*
 known_hosts*
 .env*
 *.backup.*
+
+*.zip
+*.7z
+.30na-restore.*
