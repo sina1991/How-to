@@ -3,7 +3,13 @@ set -euo pipefail
 umask 077
 fail(){ printf '\033[31mERROR: %s\033[0m\n' "$*" >&2; exit 1; }
 step(){ printf '\033[36m%s\033[0m\n' "$*"; }
-step '=== 30nA SSH LOCAL SETUP v4 ==='
+step '=== 30nA SSH LOCAL SETUP v5 ==='
+password=''
+case $# in
+  0) ;;
+  2) [[ "$1" == --password && -n "$2" ]] || fail 'Usage: install.sh [--password ZIP_PASSWORD]'; password=$2 ;;
+  *) fail 'Usage: install.sh [--password ZIP_PASSWORD]' ;;
+esac
 step '[1/4] Installing missing prerequisites'
 if ! command -v ssh >/dev/null || ! command -v ssh-keygen >/dev/null || ! command -v ssh-copy-id >/dev/null || ! command -v 7z >/dev/null; then
   command -v apt-get >/dev/null || fail 'Ubuntu/Debian required for automatic package installation'
@@ -19,13 +25,36 @@ mkdir -p "$dir"
 chmod 700 "$dir"
 src="$HOME/30na_windows"
 dest="$dir/id_ed25519"
-if [[ ! -e "$src" && ! -e "$src.pub" && -f "$dest" && -f "$dest.pub" ]]; then
-  src="$dest"
+tmp=''
+trap '[[ -z "$tmp" ]] || rm -rf -- "$tmp"' EXIT
+if [[ ! -e "$src" && ! -L "$src" && ! -e "$src.pub" && ! -L "$src.pub" ]]; then
+  if [[ -f "$dest" && -f "$dest.pub" ]]; then
+    src="$dest"
+    step 'Using installed identity'
+  elif [[ -f "$dir/30na_windows" && -f "$dir/30na_windows.pub" ]]; then
+    src="$dir/30na_windows"
+    step 'Using previously restored identity'
+  else
+    archive="$HOME/30na-SSH-Backup.zip"
+    [[ -f "$archive" ]] || fail "ZIP not found: $archive"
+    tmp=$(mktemp -d "$dir/.30na-restore.XXXXXXXX")
+    step 'Extracting encrypted ZIP'
+    if [[ -n "$password" ]]; then
+      7z e "-p$password" -y "-o$tmp" -- "$archive" 30na_windows 30na_windows.pub >/dev/null || fail 'ZIP extraction failed'
+    else
+      printf 'Enter ZIP password when prompted.\n'
+      7z e -y "-o$tmp" -- "$archive" 30na_windows 30na_windows.pub </dev/tty || fail 'ZIP extraction failed'
+    fi
+    src="$tmp/30na_windows"
+  fi
+else
+  step 'Using manually extracted keys'
 fi
+unset password
 for p in "$src" "$src.pub" "$dest" "$dest.pub"; do
   [[ ! -L "$p" ]] || fail "Symlink not allowed: $p"
 done
-[[ -f "$src" && -f "$src.pub" ]] || fail 'Extract the ZIP manually into your home directory first (30na_windows and 30na_windows.pub).'
+[[ -f "$src" && -f "$src.pub" ]] || fail 'Key pair missing or incomplete; no files overwritten.'
 chmod 600 "$src"
 chmod 644 "$src.pub"
 derived=$(ssh-keygen -y -P '' -f "$src") || fail 'Private key invalid or passphrase-protected; unattended setup requires a separate secure unlocking strategy'
