@@ -26,10 +26,19 @@ curl -fsSL https://raw.githubusercontent.com/sina1991/How-to/main/SSH-Infrastruc
 ```bash
 curl -fsSL https://raw.githubusercontent.com/sina1991/How-to/main/SSH-Infrastructure-30nA/install.sh | bash
 ```
-فقط کلیدهای استخراج‌شده را نصب می‌کند؛ هیچ ZIP یا Password دریافت نمی‌کند. مقصد ~/.ssh/id_ed25519 و ~/.ssh/id_ed25519.pub است. کلید متفاوت موجود در این مسیر بازنویسی نمی‌شود. کلید بدون Passphrase برای اتصال غیرتعاملی لازم است؛ اسکریپت Passphrase را حذف نمی‌کند. Permission خصوصی 600، عمومی 644 و پوشه 700 است. هیچ سرویس SSH یا Tunnel تغییر نمی‌کند.
+فقط کلیدهای استخراج‌شده را نصب می‌کند؛ هیچ ZIP یا Password دریافت نمی‌کند. مقصد ~/.ssh/id_ed25519 و ~/.ssh/id_ed25519.pub است. کلید متفاوت موجود در این مسیر بازنویسی نمی‌شود. کلید بدون Passphrase برای اتصال غیرتعاملی لازم است؛ اسکریپت Passphrase را حذف نمی‌کند. Permission خصوصی 600، عمومی 644 و پوشه 700 است. نصب باید با root انجام شود. OpenSSH Server نیز نصب می‌شود، Public Key به authorized_keys افزوده می‌شود و ورود root با Password و Public Key هم‌زمان فعال می‌شود. تنظیمات sshd پیش از reload اعتبارسنجی و نسخه پشتیبان تهیه می‌شود. Tunnelها مستقیماً تغییر نمی‌کنند. Match blockهای خاص ممکن است تنظیمات اتصال خارجی را تغییر دهند؛ اتصال واقعی را از نشست جداگانه آزمایش کنید.
 
 <a name="connect"></a>
 ## ۴. اتصال به VPS
+از Windows برای تست ورود به سرور ایران:
+```powershell
+ssh -o BatchMode=yes root@i.30na.top
+```
+برای تست Password:
+```powershell
+ssh -o PubkeyAuthentication=no -o PreferredAuthentications=password root@i.30na.top
+```
+
 ```bash
 ssh root@gr02.30na.top
 ```
@@ -53,7 +62,7 @@ IP واقعی را جایگزین کنید، هویت سرور را بررسی �
 - Host key changed: از Console معتبر هویت جدید را بررسی کنید؛ اعتبارسنجی را غیرفعال نکنید.
 - Permission denied: کاربر و authorized_keys مقصد را بررسی کنید.
 - کلید خصوصی مشترک روی هر VPS مبدأ، ریسک دسترسی به همه مقصدها را ایجاد می‌کند. ZIP و رمز را در GitHub قرار ندهید. رمزهای قبلاً افشاشده را تغییر دهید.
-- نسخه جدید Linux هنوز روی VPS واقعی تست نشده است.
+- نسخه v7 هنوز روی VPS واقعی تست نشده است.
 
 <a name="windows"></a>
 ## ۷. Windows
