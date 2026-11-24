@@ -1,0 +1,9 @@
+*.pem
+*.key
+*.pub
+id_ed25519*
+30na_windows*
+authorized_keys*
+known_hosts*
+.env*
+*.backup.*
