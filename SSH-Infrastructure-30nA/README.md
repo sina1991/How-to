@@ -1,11 +1,33 @@
 # SSH Infrastructure — 30nA
 
-راهنمای دسترسی SSH با Windows، Termius و Linux. برای هر دستگاه کلید ED25519 مستقل بسازید. فقط Public Key را روی مقصد نصب کنید. هیچ Private Key یا تنظیمات واقعی زیرساخت را در این مخزن عمومی قرار ندهید.
+## هدف
+یک جفت کلید دائمی ED25519 برای همه حساب‌های VPS و دستگاه‌های مدیریتی مورد اعتماد. سرور عوض می‌شود؛ کلید عوض نمی‌شود. کلید موجود با نام 30na_windows و عنوان پنل 30na-windows-admin است. نام کوتاه SSH لازم نیست.
 
-- [Windows](docs/WINDOWS-SETUP.md)
-- [Termius](docs/TERMIUS-SETUP.md)
-- [Server-to-server and existing tunnels](docs/SERVER-TO-SERVER.md)
+## از کجا شروع کنم؟
+| وضعیت | راهنما |
+|---|---|
+| حساب جدید Doprax یا ارائه‌دهنده دیگر | [ساخت VPS](docs/VPS-PROVIDERS.md) |
+| کامپیوتر شخصی یا جدید | [Windows](docs/WINDOWS-SETUP.md) |
+| موبایل یا Termius | [Termius](docs/TERMIUS-SETUP.md) |
+| سفر و دسترسی بدون کامپیوتر شخصی | [Recovery](docs/RECOVERY.md) |
+| سرور موجود بدون کلید | بخش نصب Public Key در پایین |
+| Linux و Tunnel | [Server-to-server](docs/SERVER-TO-SERVER.md) (مرحله اجرایی فعلاً متوقف است) |
 
-## Installation
-On a trusted Ubuntu console, inspect install.sh, then run `bash install.sh /path/to/client.pub` as the target login user. It appends a public key, preserves existing keys and creates a backup. It never changes sshd configuration or restarts services. Keep existing sessions open and test a new connection before closing them.
-On Windows, inspect install.ps1 and run it from PowerShell to generate a new independent key or display the existing public key. No aliases are required.
+## اصل کار
+- فایل 30na_windows خصوصی است و فقط روی دستگاه مورد اعتماد یا Backup رمزگذاری‌شده نگهداری می‌شود.
+- فایل 30na_windows.pub عمومی است؛ همین فایل را در تمام حساب‌های ارائه‌دهندگان ثبت کنید.
+- هنگام ساخت VPS، همان SSH Key را انتخاب کنید. اگر ارائه‌دهنده کلید را برای root نصب کند، SSH روی پورت 22 در دسترس باشد و کلاینت کلید خصوصی را ارائه دهد، دستور ssh root@VPS_IP بدون Password حساب سرور کار می‌کند.
+- Passphrase کلید با Password سرور متفاوت است. ممکن است برای باز کردن کلید لازم باشد.
+- Host Key هر VPS مستقل از کلید مدیریتی است. پس از Reinstall یا تغییر IP باید هویت سرور جدید را بررسی کنید.
+
+## نصب Public Key روی سرور موجود
+با Console معتبر یا نشست SSH موجود، فایل عمومی را روی مقصد قرار دهید و از داخل مخزن، با کاربر مقصد اجرا کنید:
+```bash
+clear
+bash install.sh /path/to/30na_windows.pub
+```
+اسکریپت کلیدهای قبلی را حفظ می‌کند و Backup می‌گیرد. سرویس SSH را Restart نمی‌کند. قبل از بستن نشست قبلی اتصال جدید را تست کنید.
+
+## امنیت و وضعیت
+این مدل به درخواست مالک، یک کلید مشترک دارد؛ نفوذ به یکی از نسخه‌های خصوصی می‌تواند همه حساب‌ها و سرورها را در معرض خطر قرار دهد. کلید خصوصی، Passphrase و اطلاعات واقعی سرورها نباید در GitHub، ایمیل یا چت قرار گیرند. حذف سرور برای استفاده از این مدل لازم نیست و داده‌ها و Tunnelهای آن را از بین می‌برد.
+Windows و Termius برای سرورهای فعلی طبق گزارش مالک کار می‌کنند. نصب روی حساب‌های آینده وابسته به ارائه‌دهنده است. اسکریپت‌ها روی دستگاه جدید هنوز تست عملی نشده‌اند.
