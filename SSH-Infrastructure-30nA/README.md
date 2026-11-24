@@ -1,86 +1,171 @@
-# 🔐 SSH Infrastructure — 30nA
+<h1 align="center">SSH Infrastructure — 30nA</h1>
+<p align="center"><strong>ONE KEY • ALL SERVERS • WINDOWS / LINUX / TERMIUS</strong></p>
+<p align="center"><img alt="Version 3" src="https://img.shields.io/badge/Version-3-blue"> <img alt="ED25519" src="https://img.shields.io/badge/SSH-ED25519-green"> <img alt="AES256" src="https://img.shields.io/badge/Backup-AES256-orange"></p>
 
-**یک کلید مشترک، تمام VPSها، تمام حساب‌ها و دستگاه‌های مورد اعتماد.**
+<div dir="rtl" align="right">
 
-> [!IMPORTANT]
-> فایل ZIP و رمز آن فقط نزد خودتان بماند. روی کامپیوتر عمومی از Termius موبایل استفاده کنید.
+یک کلید مشترک برای تمام حساب‌های VPS، سرورهای جدید و دستگاه‌های مدیریتی مورد اعتماد. این دفترچه برای استفاده روزمره و بازیابی در سفر است.
 
-## 🟦 ۱. ساخت Backup — Windows اصلی
+</div>
 
-اگر 7-Zip نصب نیست:
+## فهرست مطالب / Contents
+
+| بخش | کاربرد |
+|---|---|
+| [01 — ساخت ZIP](#backup) | ساخت و تست نسخه پشتیبان |
+| [02 — Windows](#windows) | نصب کلید در PowerShell |
+| [03 — Linux](#linux) | نصب کلید در Ubuntu / Debian |
+| [04 — Termius](#termius) | اتصال از موبایل یا دسکتاپ |
+| [05 — VPS](#vps) | ثبت کلید در حساب جدید یا VPS موجود |
+| [06 — عیب‌یابی](#help) | خطاها، امنیت و بازیابی |
+
+---
+
+<a name="backup"></a>
+## 🟧 01 — ساخت ZIP / Backup
+
+<div dir="rtl" align="right">
+
+**محیط اجرا: PowerShell کامپیوتر اصلی.** فقط یک بار برای ساخت نسخه پشتیبان از کلید موجود. اسکریپت در صورت نیاز 7-Zip را نصب می‌کند، رمز را از شما می‌پرسد و آرشیو را تست می‌کند. کلید جدید تولید نمی‌شود.
+
+</div>
+
 ```powershell
-winget install --id 7zip.7zip -e
-```
-در PowerShell، یکجا اجرا کنید. نام فایل ZIP جدید باید آزاد باشد.
-```powershell
-clear; $z = "$env:USERPROFILE\Downloads\30na-SSH-Backup.zip"; if (Test-Path $z) { throw "Archive exists; move it first" }; & "$env:ProgramFiles\7-Zip\7z.exe" a -tzip -mem=AES256 -p $z "$env:USERPROFILE\.ssh\30na_windows" "$env:USERPROFILE\.ssh\30na_windows.pub"; if ($LASTEXITCODE -ne 0) { throw "Backup failed" }
-```
-رمز طولانی و تصادفی را هنگام درخواست وارد کنید. برای تست رمز:
-```powershell
-clear; & "$env:ProgramFiles\7-Zip\7z.exe" t "$env:USERPROFILE\Downloads\30na-SSH-Backup.zip"
-```
-باید Everything is Ok نمایش داده شود. ZIP را در محل امن نگهداری کنید.
-
-## 🟩 ۲. نصب روی Ubuntu/Linux جدید
-
-ZIP را در پوشه فعلی یا Home یا Downloads قرار دهید. اگر جای دیگری است مسیر کامل را هنگام درخواست وارد کنید.
-
-در Ubuntu، یک بار پیش‌نیازها را نصب کنید (اگر root هستید sudo را حذف کنید):
-```bash
-sudo apt-get update && sudo apt-get install -y curl openssh-client p7zip-full
+clear; $p = Join-Path $env:TEMP "30na-backup.ps1"; Invoke-WebRequest "https://raw.githubusercontent.com/sina1991/How-to/main/SSH-Infrastructure-30nA/backup.ps1" -OutFile $p -ErrorAction Stop; powershell.exe -NoProfile -ExecutionPolicy Bypass -File $p
 ```
 
-**دستور نصب — یکجا کپی کنید:**
-```bash
-clear
-f=$(mktemp) && curl -fsSL https://raw.githubusercontent.com/sina1991/How-to/main/SSH-Infrastructure-30nA/install.sh -o "$f" && bash "$f" && eval "$(ssh-agent -s)" && ssh-add ~/.ssh/30na_windows
-```
-- ZIP path: Enter برای مسیر پیشنهادی یا مسیر کامل فایل.
-- Enter password: رمز ZIP (نه Password سرور).
-- اگر SSH Passphrase درخواست شد، رمز خود کلید را وارد کنید.
-- خروجی موفق: Key restored successfully و Identity added.
+**Output:** %USERPROFILE%\Downloads\30na-SSH-Backup.zip
 
-اتصال:
-```bash
-ssh root@VPS_IP
-```
-در نشست جدید اگر Agent در دسترس نیست، از ssh -i ~/.ssh/30na_windows root@VPS_IP استفاده کنید یا Agent را دوباره فعال کنید.
+<div dir="rtl" align="right">
 
-## 🟦 ۳. نصب روی Windows جدید
+رمز طولانی و تصادفی انتخاب کنید. فایل ZIP را در حافظه رمزگذاری‌شده یا محل امن نگهداری کنید؛ هیچ‌گاه در GitHub قرار ندهید. پیام Backup verified به معنای موفقیت تست آرشیو است.
 
-OpenSSH Client و 7-Zip لازم است. ZIP را در Downloads، Home یا پوشه فعلی بگذارید. در PowerShell عادی دستور زیر را یکجا اجرا کنید:
+</div>
+
+---
+
+<a name="windows"></a>
+## 🟦 02 — Windows / PowerShell
+
+<div dir="rtl" align="right">
+
+**محیط اجرا: PowerShell عادی در کامپیوتر مورد اعتماد.** فایل ZIP را در Downloads، Home یا پوشه فعلی قرار دهید. دستور زیر را یکجا اجرا کنید. نصب‌کننده OpenSSH و 7-Zip را در صورت نیاز نصب و SSH Agent را فعال می‌کند. درخواست UAC را در صورت نیاز تأیید کنید. Windows Package Manager برای نصب خودکار 7-Zip لازم است.
+
+</div>
+
 ```powershell
 clear; $p = Join-Path $env:TEMP "30na-install.ps1"; Invoke-WebRequest "https://raw.githubusercontent.com/sina1991/How-to/main/SSH-Infrastructure-30nA/install.ps1" -OutFile $p -ErrorAction Stop; powershell.exe -NoProfile -ExecutionPolicy Bypass -File $p
 ```
-اگر Agent متوقف است، در PowerShell Administrator:
+
+<div dir="rtl" align="right">
+
+در پیام ZIP path اگر مسیر درست است Enter بزنید؛ در پیام Enter password رمز ZIP را وارد کنید. اگر کلید Passphrase دارد، آن را نیز وارد کنید. پس از پیام موفقیت، برای اتصال IP یا دامنه واقعی سرور را جایگزین کنید.
+
+</div>
+
 ```powershell
-clear; Set-Service ssh-agent -StartupType Automatic; Start-Service ssh-agent
+ssh root@VPS_IP
 ```
-سپس در PowerShell عادی:
+
+---
+
+<a name="linux"></a>
+## 🟩 03 — Ubuntu / Debian
+
+<div dir="rtl" align="right">
+
+**محیط اجرا: Bash در Linux، با حساب کاربری که قرار است از SSH استفاده کند.** ZIP را در پوشه فعلی، Home یا Downloads قرار دهید. دستور زیر curl را در صورت نیاز نصب می‌کند؛ نصب‌کننده نیز OpenSSH و 7-Zip را خودکار نصب می‌کند. برای نصب بسته‌ها دسترسی root یا sudo لازم است.
+
+</div>
+
+```bash
+clear; if ! command -v curl >/dev/null; then if [ "$(id -u)" = 0 ]; then apt-get update && apt-get install -y curl; else sudo apt-get update && sudo apt-get install -y curl; fi; fi && f=$(mktemp) && curl -fsSL https://raw.githubusercontent.com/sina1991/How-to/main/SSH-Infrastructure-30nA/install.sh -o "$f" && bash "$f" && eval "$(ssh-agent -s)" && ssh-add ~/.ssh/30na_windows
+```
+
+<div dir="rtl" align="right">
+
+در ZIP path مسیر فایل را وارد کنید یا Enter بزنید. سپس رمز ZIP را وارد کنید. پس از Key restored successfully و Identity added اتصال آماده است.
+
+</div>
+
+```bash
+ssh root@VPS_IP
+```
+
+<div dir="rtl" align="right">
+
+در نشست جدید ممکن است Agent قبلی در دسترس نباشد. در آن صورت از ssh -i ~/.ssh/30na_windows root@VPS_IP استفاده کنید. نصب کلید هیچ سرویس SSH یا Tunnel موجود را تغییر نمی‌دهد.
+
+</div>
+
+---
+
+<a name="termius"></a>
+## 🟪 04 — Termius
+
+<div dir="rtl" align="right">
+
+در موبایل یا کامپیوتر شخصی، از Keychain گزینه Import Key را انتخاب کنید و همان فایل خصوصی 30na_windows را از Backup امن وارد کنید؛ Generate Key نزنید. سپس Host جدید با IP یا دامنه واقعی، پورت 22، نام کاربری root و همان Key بسازید. Password سرور لازم نیست. اگر ارائه‌دهنده کاربر ubuntu دارد همان را انتخاب کنید. ورود به حساب Termius به تنهایی تضمین بازیابی کلید نیست؛ Sync را قبل از سفر آزمایش کنید.
+
+</div>
+
+[Download Termius](https://termius.com/download)
+
+---
+
+<a name="vps"></a>
+## 🟦 05 — VPS / Doprax / Other providers
+
+<div dir="rtl" align="right">
+
+در Windows با دستور زیر Public Key را کپی کنید و در قسمت SSH Keys هر حساب ارائه‌دهنده با نام 30na-windows-admin ثبت کنید. هنگام ساخت VPS همان کلید را انتخاب کنید. در این صورت اگر کلید برای کاربر مقصد نصب شود نیازی به ssh-copy-id نیست.
+
+</div>
+
 ```powershell
-clear; ssh-add "$env:USERPROFILE\.ssh\30na_windows"; ssh-add -l
+clear; Get-Content "$env:USERPROFILE\.ssh\30na_windows.pub" | Set-Clipboard
 ```
-اتصال: ssh root@VPS_IP.
 
-## 🟪 ۴. Termius و VPS جدید
+[Doprax SSH Keys](https://www.doprax.com/v/services/virtual-machines/ssh-keys/)
 
-- [Termius: Import همان Private Key](docs/TERMIUS-SETUP.md)
-- [Doprax و دیگر سرویس‌دهندگان: ثبت Public Key](docs/VPS-PROVIDERS.md)
+<div dir="rtl" align="right">
 
-هنگام ایجاد VPS همان Public Key را انتخاب کنید. نام کاربری ممکن است ubuntu باشد. Host Key سرور را از Console معتبر بررسی کنید.
+برای VPS موجود بدون کلید، فایل عمومی را از راه امن به Home کاربر مقصد منتقل کنید و در Console معتبر همان کاربر دستور زیر را اجرا کنید. کلیدهای قدیمی حفظ می‌شوند.
 
-## 🟥 ۵. خطاها
+</div>
 
-| خطا | راه حل |
+```bash
+clear; f=$(mktemp) && curl -fsSL https://raw.githubusercontent.com/sina1991/How-to/main/SSH-Infrastructure-30nA/install-public-key.sh -o "$f" && bash "$f" "$HOME/30na_windows.pub"
+```
+
+---
+
+<a name="help"></a>
+## 🟥 06 — Troubleshooting & Security
+
+| Message | راه حل |
 |---|---|
-| ZIP not found | مسیر کامل فایل ZIP را وارد کنید، نه رمز |
-| Wrong password | رمز واقعی ZIP را بررسی کنید؛ نصب‌کننده v2 رمز را از طریق 7-Zip می‌پرسد |
-| Existing key differs | فایل قبلی را حذف نکنید؛ ابتدا Fingerprint را بررسی کنید |
-| Permission denied (publickey) | کلید عمومی باید روی کاربر مقصد نصب شده باشد |
-| Host key changed | Fingerprint جدید را مستقل بررسی کنید؛ اعتبارسنجی را غیرفعال نکنید |
+| ZIP not found | مسیر فایل را وارد کنید، نه رمز |
+| Wrong password | رمز واقعی آرشیو را وارد کنید |
+| Existing key differs | فایل قبلی را حذف نکنید؛ Fingerprint را بررسی کنید |
+| Permission denied (publickey) | کلید عمومی و نام کاربری مقصد را بررسی کنید |
+| Host key changed | هویت سرور جدید را از Console معتبر بررسی کنید |
 
-## سایر راهنماها
+<div dir="rtl" align="right">
 
-[Windows](docs/WINDOWS-SETUP.md) · [Recovery](docs/RECOVERY.md) · [Linux / Tunnel](docs/SERVER-TO-SERVER.md)
+برای بررسی Host Key در Console معتبر سرور از دستور زیر استفاده کنید؛ تنها پس از تطبیق کامل آن را در کلاینت تأیید کنید.
 
-برای افزودن فقط Public Key به VPS موجود: bash install-public-key.sh /path/to/30na_windows.pub. نصب‌کننده‌های ZIP سرویس SSH و Tunnelها را تغییر نمی‌دهند. این مدل ریسک مشترک دارد؛ افشای یک کلید خصوصی همه سرورها را در معرض خطر قرار می‌دهد. هیچ کلید یا رمز واقعی در مخزن ثبت نمی‌شود. تست عملی نسخه v2 روی دستگاه کاربر هنوز باقی است.
+</div>
+
+```bash
+ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
+```
+
+> [!IMPORTANT]
+> یک Private Key مشترک یعنی افشای آن می‌تواند همه VPSها را در معرض خطر قرار دهد. روی کامپیوتر عمومی از Termius موبایل شخصی استفاده کنید. ZIP و رمز را در مخزن قرار ندهید. اگر کلید افشا شد، در تمام حساب‌ها و سرورها آن را تعویض کنید. حذف کلید از پنل لزوماً کلید نصب‌شده روی VPS موجود را حذف نمی‌کند.
+
+<div dir="rtl" align="right">
+
+**وضعیت تست:** بازیابی V2 در Windows و Ubuntu و اتصال Linux به VPS با گزارش مالک موفق بوده است. V3 همان منطق بازیابی را حفظ می‌کند و نصب پیش‌نیازها را اضافه کرده است؛ مسیر نصب خودکار پیش‌نیازها هنوز نیاز به تست روی سیستم تازه دارد. سرور ایران و Tunnelهای فعال تغییر نکرده‌اند.
+
+</div>
