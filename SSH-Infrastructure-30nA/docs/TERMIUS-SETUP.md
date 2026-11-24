@@ -1,11 +1,18 @@
-# Termius — Android, iOS and Desktop
+# Termius — همان کلید مشترک
 
-Download: https://termius.com/download
-1. Open Keychain/Keys (labels vary by platform/version), generate an Ed25519 key named 30na-termius-device, protect it with a passphrase.
-2. Copy/export its public key only. Through an existing trusted admin connection save the public key as a temporary file on the destination and run `bash install.sh /path/to/client.pub` as the destination login user.
-3. Add a Host: address server.example.com (or verified IP), port 22, username root if that is the existing account, authentication key 30na-termius-device. Leave password blank.
-4. Verify the host fingerprint independently via provider console: `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub`. Accept only a match. Connect and run `whoami; hostname -I`.
-5. Repeat for each server. Prefer individual keys per device. If using Termius vault synchronization, review account security and whether private keys are synchronized. Avoid importing the primary Windows private key. Never send keys via chat or email.
-6. If a device is lost, remove its matching public key from authorized_keys on all destinations using a trusted remaining session and backup first. Do not remove other keys.
+## بار اول
+۱. Termius را از https://termius.com/download یا فروشگاه رسمی نصب کنید.
+۲. در Keychain/Keys گزینه Import Key را انتخاب کنید (نام منو ممکن است متفاوت باشد).
+۳. فایل خصوصی 30na_windows را از دستگاه مورد اعتماد وارد کنید. فایل .pub برای Import احراز هویت کافی نیست. Generate Key نزنید.
+۴. نام نمایشی دلخواه، مثلاً 30na-windows-admin، انتخاب کنید. Passphrase کلید را در صورت نیاز وارد کنید.
+۵. در Hosts یک Host بسازید: Address = IP یا دامنه واقعی VPS، Port = 22، Username = root (یا نام کاربری ارائه‌دهنده)، Key = همان کلید Import شده. Password حساب سرور لازم نیست.
+۶. Host Key را با Console معتبر بررسی و Connect کنید.
 
-Permission denied (publickey) means authentication failed; verify the selected key, account and authorized_keys permissions. Host key errors are separate; never bypass them.
+## VPS جدید
+فقط Host جدید اضافه و همان Key را انتخاب کنید. Public Key باید هنگام ساخت VPS انتخاب و برای کاربر مقصد نصب شده باشد. کلید جدید نسازید.
+
+## موبایل و سفر
+قبل از سفر روی موبایل شخصی اتصال را تست کنید. اگر از Vault Sync استفاده می‌کنید، بررسی کنید پلن و تنظیمات شما واقعاً کلید خصوصی را هم همگام می‌کنند؛ ورود به حساب به تنهایی تضمین دسترسی به کلید نیست. MFA و قفل دستگاه فعال باشد. روی کامپیوتر عمومی کلید مشترک را Import نکنید؛ از موبایل شخصی استفاده کنید. راهنمای Backup: [Recovery](RECOVERY.md).
+
+## اگر دستگاه گم شد
+در صورت احتمال افشای Private Key، لغو یک دستگاه کافی نیست؛ کلید مشترک را در همه VPSها و حساب‌های ارائه‌دهنده جایگزین کنید. ابتدا دسترسی جایگزین را تست کنید.
