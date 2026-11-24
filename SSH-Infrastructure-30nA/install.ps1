@@ -1,13 +1,22 @@
 param([string]$ZipPath)
 $ErrorActionPreference = 'Stop'
+Write-Host '[0/3] Checking dependencies' -ForegroundColor Cyan
+if (!(Get-Command ssh-keygen.exe -ErrorAction SilentlyContinue) -or !(Get-Command ssh-add.exe -ErrorAction SilentlyContinue)) {
+    $proc = Start-Process powershell.exe -Verb RunAs -ArgumentList '-NoProfile -Command "Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0 -ErrorAction Stop"' -Wait -PassThru
+    if ($proc.ExitCode -ne 0) { throw 'OpenSSH installation failed' }
+    $env:Path += ";$env:WINDIR\System32\OpenSSH"
+}
 $seven = Join-Path $env:ProgramFiles '7-Zip\7z.exe'
 if (!(Test-Path -LiteralPath $seven)) {
     $cmd = Get-Command 7z.exe -ErrorAction SilentlyContinue
-    if (!$cmd) { throw 'Install 7-Zip first: winget install --id 7zip.7zip -e' }
-    $seven = $cmd.Source
+    if (!$cmd) {
+        if (!(Get-Command winget.exe -ErrorAction SilentlyContinue)) { throw 'Windows Package Manager is unavailable. Install 7-Zip from https://7-zip.org and rerun.' }
+        winget install --id 7zip.7zip -e --accept-package-agreements --accept-source-agreements
+        if (!(Test-Path -LiteralPath $seven)) { throw '7-Zip installation incomplete; rerun after installation' }
+    } else { $seven = $cmd.Source }
 }
 Get-Command ssh-keygen, ssh-add | Out-Null
-Write-Host '=== 30nA SSH RESTORE v2 ===' -ForegroundColor Cyan
+Write-Host '=== 30nA SSH RESTORE v3 ===' -ForegroundColor Cyan
 $default = Join-Path $env:USERPROFILE 'Downloads\30na-SSH-Backup.zip'
 if (Test-Path (Join-Path $env:USERPROFILE '30na-SSH-Backup.zip')) { $default = Join-Path $env:USERPROFILE '30na-SSH-Backup.zip' }
 if (Test-Path '.\30na-SSH-Backup.zip') { $default = '.\30na-SSH-Backup.zip' }
@@ -52,8 +61,10 @@ try {
         try { [IO.File]::Move("$key.pub", "$dest.pub") } catch { Remove-Item -LiteralPath $dest; throw }
     }
     if ((Get-Service ssh-agent).Status -ne 'Running') {
-        Write-Warning 'Key restored. In elevated PowerShell run: Set-Service ssh-agent -StartupType Automatic; Start-Service ssh-agent. Then in normal PowerShell run ssh-add on the restored key.'
-    } else {
+        $proc = Start-Process powershell.exe -Verb RunAs -ArgumentList '-NoProfile -Command "Set-Service ssh-agent -StartupType Automatic -ErrorAction Stop; Start-Service ssh-agent -ErrorAction Stop"' -Wait -PassThru
+        if ($proc.ExitCode -ne 0 -or (Get-Service ssh-agent).Status -ne 'Running') { throw 'Key restored, but SSH Agent could not start' }
+    }
+    & {
         ssh-add $dest
         if ($LASTEXITCODE -ne 0) { throw 'Key restored but ssh-add failed' }
         ssh-add -l
