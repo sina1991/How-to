@@ -1,12 +1,18 @@
+# Restore the existing master key securely before running. Never generates keys.
 $ErrorActionPreference = 'Stop'
-$dir = Join-Path $env:USERPROFILE '.ssh'
-$key = Join-Path $dir '30na_windows'
-New-Item -ItemType Directory -Force $dir | Out-Null
-if (!(Test-Path $key) -and !(Test-Path "$key.pub")) {
-    ssh-keygen -t ed25519 -a 100 -C "30na-$env:COMPUTERNAME" -f $key
-    if ($LASTEXITCODE -ne 0) { throw 'Key generation failed' }
+$key = Join-Path $env:USERPROFILE '.ssh\30na_windows'
+if (!(Test-Path -LiteralPath $key -PathType Leaf) -or !(Test-Path -LiteralPath "$key.pub" -PathType Leaf)) {
+    throw 'Restore the original master key pair from encrypted backup first. No new key generated.'
 }
-if (!(Test-Path $key) -or !(Test-Path "$key.pub")) { throw 'Incomplete key pair; inspect manually' }
+$public = (& ssh-keygen -y -f $key)
+if ($LASTEXITCODE -ne 0) { throw 'Unable to read private key' }
+$stored = (Get-Content -LiteralPath "$key.pub" -Raw).Trim()
+if ((($public -split '\s+')[0..1] -join ' ') -ne (($stored -split '\s+')[0..1] -join ' ')) { throw 'Key pair mismatch' }
 ssh-keygen -lf "$key.pub"
-Get-Content "$key.pub" | Set-Clipboard
-Write-Host 'Public key copied. Install it on the destination using a trusted session.'
+if ($LASTEXITCODE -ne 0) { throw 'Invalid public key' }
+if ((Get-Service ssh-agent).Status -ne 'Running') { throw 'Start ssh-agent in elevated PowerShell first' }
+ssh-add $key
+if ($LASTEXITCODE -ne 0) { throw 'ssh-add failed' }
+Get-Content -LiteralPath "$key.pub" | Set-Clipboard
+ssh-add -l
+Write-Host 'Existing master key loaded. Public key copied.'
