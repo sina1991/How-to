@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 umask 077
-command -v ssh-keygen >/dev/null || { echo 'Install openssh-client first'; exit 1; }
-seven=$(command -v 7zz || command -v 7z) || { echo 'Install 7zip or p7zip-full first'; exit 1; }
+printf '\033[36m[0/3] Checking dependencies\033[0m\n'
+if ! command -v ssh-keygen >/dev/null || ! command -v ssh-add >/dev/null || ! command -v ssh-agent >/dev/null || ! { command -v 7zz >/dev/null || command -v 7z >/dev/null; }; then
+  command -v apt-get >/dev/null || { echo 'Automatic dependencies supported on Debian/Ubuntu; install OpenSSH and 7-Zip manually.'; exit 1; }
+  elevate=()
+  if [[ $EUID != 0 ]]; then elevate=(sudo); fi
+  "${elevate[@]}" apt-get update
+  "${elevate[@]}" apt-get install -y openssh-client p7zip-full
+fi
+seven=$(command -v 7zz || command -v 7z)
 default="$HOME/Downloads/30na-SSH-Backup.zip"
 [[ ! -f "$HOME/30na-SSH-Backup.zip" ]] || default="$HOME/30na-SSH-Backup.zip"
 [[ ! -f "./30na-SSH-Backup.zip" ]] || default="./30na-SSH-Backup.zip"
-printf "\\033[36m=== 30nA SSH RESTORE v2 ===\\033[0m\\n"
+printf "\\033[36m=== 30nA SSH RESTORE v3 ===\\033[0m\\n"
 archive=${1:-}
 if [[ -z "$archive" ]]; then
   read -r -p "ZIP path [$default]: " archive
